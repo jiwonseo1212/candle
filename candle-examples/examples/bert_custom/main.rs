@@ -3,8 +3,8 @@ extern crate intel_mkl_src;
 
 #[cfg(feature = "accelerate")]
 extern crate accelerate_src;
-use candle_transformers::models::bert::{BertModel, Config, HiddenAct, DTYPE};
-
+// use candle_transformers::models::bert::{BertModel, Config, HiddenAct, DTYPE};
+use candle_transformers::models::bert_classification::{BertModelWithClassifier, Config, HiddenAct, DTYPE};
 use anyhow::{Error as E, Result};
 use candle::Tensor;
 use candle_nn::VarBuilder;
@@ -53,7 +53,7 @@ struct Args {
 }
 
 impl Args {
-    fn build_model_and_tokenizer(&self) -> Result<(BertModel, Tokenizer)> {
+    fn build_model_and_tokenizer(&self) -> Result<(BertModelWithClassifier, Tokenizer)> {
         let device = candle_examples::device(self.cpu)?;
         let default_model = "sentence-transformers/all-MiniLM-L6-v2".to_string();
         let default_revision = "refs/pr/21".to_string();
@@ -105,9 +105,15 @@ impl Args {
         if self.approximate_gelu {
             config.hidden_act = HiddenAct::GeluApproximate;
         }
-        let model = BertModel::load(vb, &config)?;
+        let model = BertModelWithClassifier::load(vb, &config)?;
         Ok((model, tokenizer))
     }
+}
+
+
+fn get_bio_tag(ys: Tensor, tokens:Vec<u32>) {
+    let ys = ys.argmax(1).unwrap();
+    println!("{}",ys);
 }
 
 fn main() -> Result<()> {
@@ -144,9 +150,10 @@ fn main() -> Result<()> {
         for idx in 0..args.n {
             let start = std::time::Instant::now();
             let ys = model.forward(&token_ids, &token_type_ids)?;
-            if idx == 0 {
-                println!("{ys}");
-            }
+            get_bio_tag(ys, tokens.clone());
+            // if idx == 0 {
+            //     println!("{ys}");
+            // }
             println!("Took {:?}", start.elapsed());
         }
     } else {
