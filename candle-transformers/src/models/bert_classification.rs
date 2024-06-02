@@ -72,6 +72,9 @@ impl Config {
     pub fn num_labels(&self) -> usize {
         self.id2label.clone().unwrap().len()
     }
+    pub fn get_id2labels(&self) -> & Option<HashMap<String, String>> {
+        & self.id2label
+    }
 }
 
 impl Default for Config {
