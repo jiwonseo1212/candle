@@ -718,6 +718,7 @@ impl BackendStorage for MetalStorage {
         }
         let name = match (self.dtype, t.dtype()) {
             (DType::U8, DType::F32) => "where_u8_f32",
+            (DType::U32, DType::F32) => "where_u32_f32",
             (DType::U8, DType::BF16) => "where_u8_bf16",
             (DType::U8, DType::F16) => "where_u8_f16",
             (DType::U8, DType::I64) => "where_u8_i64",
@@ -847,7 +848,6 @@ impl BackendStorage for MetalStorage {
                 .device
                 .new_buffer(dst_el, self.dtype, "conv_transpose1d")?;
 
-            let command_buffer = self.device.command_buffer()?;
             let name = match self.dtype {
                 DType::F32 => "col2im1d_f32",
                 DType::U32 => "col2im1d_u32",
@@ -868,6 +868,12 @@ impl BackendStorage for MetalStorage {
                     &kernel_l_mm,
                 )?
             };
+            // It is important for the command buffer to be obtained *after* the matmul
+            // kernel has run, otherwise we might use a command-buffer that has been commited
+            // already resulting in the following error.
+            // _status < MTLCommandBufferStatusCommitted >
+            // -[IOGPUMetalCommandBuffer setCurrentCommandEncoder:]
+            let command_buffer = self.device.command_buffer()?;
             candle_metal_kernels::call_col2im1d(
                 &self.device.device,
                 &command_buffer,
