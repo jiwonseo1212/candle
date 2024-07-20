@@ -101,3 +101,6 @@ required-features = ["candle-datasets"]
 [[example]]
 name = "encodec"
 required-features = ["encodec"]
+
+[[example]]
+name = "sts"

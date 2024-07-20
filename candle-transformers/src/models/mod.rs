@@ -67,3 +67,4 @@ pub mod with_tracing;
 pub mod wuerstchen;
 pub mod yi;
 pub mod bert_classification;
+pub mod bert_sts;
